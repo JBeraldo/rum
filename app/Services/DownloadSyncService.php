@@ -24,6 +24,7 @@ class DownloadSyncService
     public function __construct(
         private QbittorrentProvider $qbittorrentProvider,
         private SourceIntegrationProvider $sourceIntegrationProvider,
+        private LibrarySyncService $librarySyncService,
     ) {}
 
     /**
@@ -168,8 +169,13 @@ class DownloadSyncService
                     $progress >= 1 ? 'download.completed' : 'download.started',
                     $progress >= 1 ? 'The download completed.' : 'The download started.',
                 );
+
+                if ($progress >= 1) {
+                    $this->syncLibraryForCompletedDownload($match['source']);
+                }
             } elseif (! $wasComplete && $progress >= 1) {
                 $this->recordTransferEvent($transfer, 'download.completed', 'The download completed.');
+                $this->syncLibraryForCompletedDownload($match['source']);
             }
 
             if ($this->isErrorState($transfer->state) && ! $this->isErrorState($previousState)) {
@@ -319,6 +325,15 @@ class DownloadSyncService
                 'progress' => $transfer->progressPercentage(),
             ],
         ]);
+    }
+
+    private function syncLibraryForCompletedDownload(string $source): void
+    {
+        $integration = Integration::query()->where('source', $source)->first();
+
+        if ($integration !== null) {
+            $this->librarySyncService->sync($integration);
+        }
     }
 
     private function sourceItemKey(string $source, string $sourceItemId): string

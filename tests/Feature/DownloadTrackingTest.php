@@ -125,7 +125,8 @@ class DownloadTrackingTest extends TestCase
         $completedTorrent['completion_on'] = now()->timestamp;
         $torrentCalls = 0;
         $queueCalls = 0;
-        Http::fake(function (Request $request) use ($completedTorrent, &$torrentCalls, &$queueCalls) {
+        $librarySyncCalls = 0;
+        Http::fake(function (Request $request) use ($completedTorrent, &$torrentCalls, &$queueCalls, &$librarySyncCalls) {
             return match (true) {
                 $request->url() === 'http://qbittorrent.test/api/v2/auth/login' => Http::response('Ok.', 200, ['Set-Cookie' => 'SID=test-session; HttpOnly; path=/']),
                 $request->url() === 'http://qbittorrent.test/api/v2/torrents/info' => Http::response($torrentCalls++ === 0
@@ -134,6 +135,12 @@ class DownloadTrackingTest extends TestCase
                 str_starts_with($request->url(), 'http://radarr.test/api/v3/queue') => Http::response(['records' => $queueCalls++ === 0
                     ? [['downloadId' => 'ABCDEF', 'movieId' => 10]]
                     : []]),
+                $request->url() === 'http://radarr.test/api/v3/movie' => tap(
+                    Http::response([$this->radarrMovie()]),
+                    function () use (&$librarySyncCalls): void {
+                        $librarySyncCalls++;
+                    },
+                ),
                 default => Http::response([], 404),
             };
         });
@@ -148,6 +155,7 @@ class DownloadTrackingTest extends TestCase
         $this->assertSame(100.0, $transfer->progressPercentage());
         $this->assertNotNull($transfer->completed_at);
         $this->assertSame(1, $movie->logs()->where('event', 'download.completed')->count());
+        $this->assertSame(1, $librarySyncCalls);
     }
 
     public function test_source_errors_preserve_transfers_and_store_the_complete_response_without_duplicate_failure_logs(): void
@@ -281,6 +289,20 @@ class DownloadTrackingTest extends TestCase
             'content_path' => '/downloads/'.$name,
             'added_on' => now()->subMinute()->timestamp,
             'completion_on' => 0,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function radarrMovie(): array
+    {
+        return [
+            'id' => 10,
+            'title' => 'Movie',
+            'sortTitle' => 'Movie',
+            'monitored' => true,
+            'hasFile' => true,
         ];
     }
 
