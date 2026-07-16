@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Integration;
 use App\Models\MediaItem;
-use App\Models\MediaItemLog;
 use App\Models\WishlistItem;
 use Illuminate\View\View;
 
@@ -39,7 +39,7 @@ class DashboardController extends Controller
                 'requested' => (int) $wishlistCounts->requested,
             ],
             'integrationCount' => Integration::query()->count(),
-            'recentLogs' => MediaItemLog::query()
+            'recentLogs' => ActivityLog::query()
                 ->select(['id', 'subject_type', 'subject_id', 'event', 'message', 'created_at'])
                 ->with('subject')
                 ->latest()

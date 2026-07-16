@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\ActivityLog;
 use App\Models\MediaItem;
-use App\Models\MediaItemLog;
 use App\Models\User;
 use App\Models\WishlistItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -59,7 +59,7 @@ class DashboardTest extends TestCase
             'status' => WishlistItem::PENDING,
             'source_payload' => [],
         ]);
-        MediaItemLog::factory()
+        ActivityLog::factory()
             ->for($availableMovie, 'subject')
             ->create(['event' => 'media.synced', 'message' => 'Library sync completed.']);
 

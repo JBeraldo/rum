@@ -63,10 +63,20 @@ class LibrarySyncService
                 'last_synced_at' => now(),
                 'last_error' => null,
             ])->save();
+            $integration->logs()->create([
+                'event' => 'library.synced',
+                'message' => "Synchronized {$integration->source} library.",
+                'context' => ['items' => count($externalIds)],
+            ]);
 
             return true;
         } catch (Throwable $exception) {
             $integration->forceFill(['last_error' => Str::limit($exception->getMessage(), 1000)])->save();
+            $integration->logs()->create([
+                'event' => 'library.sync_failed',
+                'message' => Str::limit($exception->getMessage(), 1000),
+                'context' => $this->wishlistExceptionContext($exception),
+            ]);
 
             report($exception);
 

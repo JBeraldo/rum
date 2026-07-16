@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\ActivityLog;
 use App\Models\Integration;
 use App\Models\MediaItem;
-use App\Models\MediaItemLog;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\WishlistItem;
@@ -221,7 +221,7 @@ class WishlistTest extends TestCase
         $this->assertTrue($event->withoutOverlapping);
     }
 
-    public function test_media_item_logs_can_be_used_for_general_media_item_activity(): void
+    public function test_activity_logs_can_be_used_for_general_media_item_activity(): void
     {
         $mediaItem = MediaItem::query()->create([
             'source' => Integration::RADARR,
@@ -234,7 +234,7 @@ class WishlistTest extends TestCase
             'source_metadata' => [],
         ]);
 
-        $log = MediaItemLog::factory()
+        $log = ActivityLog::factory()
             ->for($mediaItem, 'subject')
             ->create(['event' => 'media.synced']);
 

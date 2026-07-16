@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use App\Observers\MediaItemLogObserver;
-use Database\Factories\MediaItemLogFactory;
+use App\Observers\ActivityLogObserver;
+use Database\Factories\ActivityLogFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,10 +11,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 #[Fillable(['event', 'message', 'context'])]
-#[ObservedBy([MediaItemLogObserver::class])]
-class MediaItemLog extends Model
+#[ObservedBy([ActivityLogObserver::class])]
+class ActivityLog extends Model
 {
-    /** @use HasFactory<MediaItemLogFactory> */
+    /** @use HasFactory<ActivityLogFactory> */
     use HasFactory;
 
     protected function casts(): array
@@ -25,7 +25,7 @@ class MediaItemLog extends Model
     }
 
     /**
-     * Get the model this log entry describes.
+     * Get the model this activity describes.
      *
      * @return MorphTo<Model, $this>
      */

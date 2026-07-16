@@ -44,11 +44,11 @@ class DownloadClient extends Model
     /**
      * Get synchronization activity for this client.
      *
-     * @return MorphMany<MediaItemLog, $this>
+     * @return MorphMany<ActivityLog, $this>
      */
     public function logs(): MorphMany
     {
-        return $this->morphMany(MediaItemLog::class, 'subject');
+        return $this->morphMany(ActivityLog::class, 'subject');
     }
 
     protected function casts(): array

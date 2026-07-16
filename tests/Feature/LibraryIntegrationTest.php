@@ -117,6 +117,7 @@ class LibraryIntegrationTest extends TestCase
         $this->assertFalse(app(LibrarySyncService::class)->sync($integration));
         $this->assertModelExists($item);
         $this->assertNotNull($integration->refresh()->last_error);
+        $this->assertSame(1, $integration->logs()->where('event', 'library.sync_failed')->count());
     }
 
     public function test_sync_maps_items_and_removes_stale_items_after_a_successful_response(): void
@@ -152,6 +153,7 @@ class LibraryIntegrationTest extends TestCase
         $this->assertSame('https://image.test/show.jpg', $item->poster_url);
         $this->assertNull($staleItem->fresh());
         $this->assertNotNull($integration->refresh()->last_synced_at);
+        $this->assertSame(1, $integration->logs()->where('event', 'library.synced')->count());
     }
 
     public function test_library_is_visible_to_members_and_can_be_filtered(): void

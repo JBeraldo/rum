@@ -60,31 +60,31 @@ class WishlistItem extends Model
     /**
      * Get this wishlist item's processing history.
      *
-     * @return MorphMany<MediaItemLog, $this>
+     * @return MorphMany<ActivityLog, $this>
      */
     public function logs(): MorphMany
     {
-        return $this->morphMany(MediaItemLog::class, 'subject');
+        return $this->morphMany(ActivityLog::class, 'subject');
     }
 
     /**
      * Get the latest processing log entry.
      *
-     * @return MorphOne<MediaItemLog, $this>
+     * @return MorphOne<ActivityLog, $this>
      */
     public function latestLog(): MorphOne
     {
-        return $this->morphOne(MediaItemLog::class, 'subject')->latestOfMany();
+        return $this->morphOne(ActivityLog::class, 'subject')->latestOfMany();
     }
 
     /**
      * Get the latest processing error or deferral.
      *
-     * @return MorphOne<MediaItemLog, $this>
+     * @return MorphOne<ActivityLog, $this>
      */
     public function latestError(): MorphOne
     {
-        return $this->morphOne(MediaItemLog::class, 'subject')
+        return $this->morphOne(ActivityLog::class, 'subject')
             ->where('event', 'wishlist.deferred')
             ->latestOfMany();
     }

@@ -2,13 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Models\MediaItemLog;
+use App\Models\ActivityLog;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<MediaItemLog>
+ * @extends Factory<ActivityLog>
  */
-class MediaItemLogFactory extends Factory
+class ActivityLogFactory extends Factory
 {
     /**
      * Define the model's default state.

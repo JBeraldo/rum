@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -23,6 +24,16 @@ class Integration extends Model
     public const RADARR = 'radarr';
 
     public const SONARR = 'sonarr';
+
+    /**
+     * Get this integration's activity log.
+     *
+     * @return MorphMany<ActivityLog, $this>
+     */
+    public function logs(): MorphMany
+    {
+        return $this->morphMany(ActivityLog::class, 'subject');
+    }
 
     protected function casts(): array
     {

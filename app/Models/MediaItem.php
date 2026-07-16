@@ -36,11 +36,11 @@ class MediaItem extends Model
     /**
      * Get this media item's activity log.
      *
-     * @return MorphMany<MediaItemLog, $this>
+     * @return MorphMany<ActivityLog, $this>
      */
     public function logs(): MorphMany
     {
-        return $this->morphMany(MediaItemLog::class, 'subject');
+        return $this->morphMany(ActivityLog::class, 'subject');
     }
 
     /**

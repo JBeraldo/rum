@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\ActivityLog;
 use App\Models\DiscordWebhook;
-use App\Models\MediaItemLog;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Throwable;
@@ -19,6 +19,8 @@ class DiscordWebhookService
         'download.failed' => 'Download failed',
         'download.removed' => 'Download removed',
         'download.sync_failed' => 'Download sync failed',
+        'library.synced' => 'Library synced',
+        'library.sync_failed' => 'Library sync failed',
     ];
 
     /**
@@ -32,7 +34,7 @@ class DiscordWebhookService
     /**
      * Deliver a configured activity event without allowing delivery failures to interrupt the activity workflow.
      */
-    public function notify(MediaItemLog $log): void
+    public function notify(ActivityLog $log): void
     {
         $webhook = DiscordWebhook::query()->first();
 
@@ -69,7 +71,7 @@ class DiscordWebhookService
             ->throw();
     }
 
-    private function message(MediaItemLog $log): string
+    private function message(ActivityLog $log): string
     {
         $event = self::EVENTS[$log->event] ?? Str::headline($log->event);
         $message = $log->message ?? 'Activity recorded.';

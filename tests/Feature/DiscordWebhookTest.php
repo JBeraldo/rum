@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\ActivityLog;
 use App\Models\DiscordWebhook;
-use App\Models\MediaItemLog;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,7 +23,7 @@ class DiscordWebhookTest extends TestCase
         Http::preventStrayRequests();
         Http::fake(['https://discord.com/api/webhooks/*' => Http::response([], 204)]);
 
-        MediaItemLog::query()->create([
+        ActivityLog::query()->create([
             'event' => 'download.completed',
             'message' => 'The download completed.',
             'context' => [],
@@ -42,7 +42,7 @@ class DiscordWebhookTest extends TestCase
 
         Http::preventStrayRequests();
 
-        MediaItemLog::query()->create([
+        ActivityLog::query()->create([
             'event' => 'wishlist.deferred',
             'message' => 'Not enough free space.',
             'context' => [],
