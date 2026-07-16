@@ -1,12 +1,15 @@
 <?php
 
 use App\Models\DownloadClient;
+use App\Models\DiscordWebhook;
 use App\Models\Integration;
+use App\Services\DiscordWebhookService;
 use App\Services\DownloadSyncService;
 use App\Services\LibrarySyncService;
 use Flux\Flux;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -25,6 +28,10 @@ new #[Title('Integration settings')] class extends Component {
     public string $qbittorrentUsername = '';
     public string $qbittorrentPassword = '';
     public string $qbittorrentApiKey = '';
+    public string $discordWebhookUrl = '';
+    /** @var array<int, string> */
+    public array $discordEvents = [];
+    public bool $hasDiscordWebhook = false;
     /** @var array<string, array{last_tested_at: string|null, last_synced_at: string|null, last_error: string|null, configured?: bool, has_api_key?: bool}> */
     public array $integrationStatuses = [];
 
@@ -39,6 +46,9 @@ new #[Title('Integration settings')] class extends Component {
         $downloadClient = DownloadClient::query()->where('type', DownloadClient::QBITTORRENT)->first();
         $this->qbittorrentBaseUrl = $downloadClient?->base_url ?? '';
         $this->qbittorrentUsername = $downloadClient?->username ?? '';
+        $discordWebhook = DiscordWebhook::query()->first();
+        $this->discordEvents = $discordWebhook?->events ?? array_keys(DiscordWebhookService::EVENTS);
+        $this->hasDiscordWebhook = $discordWebhook !== null;
         $this->refreshIntegrationStatuses();
     }
 
@@ -141,6 +151,50 @@ new #[Title('Integration settings')] class extends Component {
         }
 
         Flux::toast(variant: 'success', text: __('Tracked :tracked downloads; :active active.', $result));
+    }
+
+    public function saveDiscordWebhook(DiscordWebhookService $discordWebhookService): void
+    {
+        Gate::authorize('manage-library');
+
+        $existing = DiscordWebhook::query()->first();
+
+        $this->validate([
+            'discordWebhookUrl' => [$existing === null ? 'required' : 'nullable', 'url', 'max:2048'],
+            'discordEvents' => ['required', 'array', 'min:1'],
+            'discordEvents.*' => ['required', 'string', Rule::in(array_keys(DiscordWebhookService::EVENTS))],
+        ]);
+
+        $webhookUrl = $this->discordWebhookUrl !== '' ? trim($this->discordWebhookUrl) : $existing?->webhook_url;
+
+        if ($webhookUrl === null || ! DiscordWebhookService::isDiscordWebhookUrl($webhookUrl)) {
+            $this->addError('discordWebhookUrl', __('Enter a valid Discord webhook URL.'));
+
+            return;
+        }
+
+        $candidate = new DiscordWebhook([
+            'webhook_url' => $webhookUrl,
+            'events' => $this->discordEvents,
+        ]);
+
+        try {
+            $discordWebhookService->test($candidate);
+        } catch (Throwable $exception) {
+            $this->addError('discordWebhookUrl', __('Unable to connect: :message', ['message' => $exception->getMessage()]));
+
+            return;
+        }
+
+        $webhook = $existing ?? new DiscordWebhook;
+        $webhook->fill([
+            'webhook_url' => $webhookUrl,
+            'events' => $this->discordEvents,
+        ])->save();
+
+        $this->discordWebhookUrl = '';
+        $this->hasDiscordWebhook = true;
+        Flux::toast(variant: 'success', text: __('Discord webhook verified and saved.'));
     }
 
     public function loadQualityProfiles(string $source, LibrarySyncService $librarySync): void
@@ -358,6 +412,27 @@ new #[Title('Integration settings')] class extends Component {
                             <flux:button wire:click="syncDownloads" type="button" wire:loading.attr="disabled">{{ __('Sync downloads now') }}</flux:button>
                         @endif
                     </div>
+                </form>
+            </flux:card>
+
+            <flux:card class="space-y-4 p-5">
+                <div>
+                    <flux:heading>{{ __('Discord') }}</flux:heading>
+                    <flux:subheading>{{ __('Send selected activity events to a Discord channel') }}</flux:subheading>
+                </div>
+
+                <form wire:submit="saveDiscordWebhook" class="space-y-4">
+                    <flux:input wire:model="discordWebhookUrl" type="password" :label="$hasDiscordWebhook ? __('New webhook URL (leave blank to keep the current URL)') : __('Webhook URL')" placeholder="https://discord.com/api/webhooks/..." autocomplete="new-password" />
+                    <flux:error name="discordWebhookUrl" />
+
+                    <flux:checkbox.group wire:model="discordEvents" :label="__('Events to send')" :description="__('Only the selected activity events will be posted to Discord.')">
+                        @foreach (\App\Services\DiscordWebhookService::EVENTS as $event => $label)
+                            <flux:checkbox value="{{ $event }}" :label="__($label)" />
+                        @endforeach
+                    </flux:checkbox.group>
+                    <flux:error name="discordEvents" />
+
+                    <flux:button variant="primary" type="submit" wire:loading.attr="disabled">{{ __('Save Discord webhook') }}</flux:button>
                 </form>
             </flux:card>
         </div>
