@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -eu
+
+php artisan optimize --no-interaction
+
+exec "$@"
+
